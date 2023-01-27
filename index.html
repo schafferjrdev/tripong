@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Tripong</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: black;
+            height: 90vh;
+
+
+        }
+
+        canvas {
+            border: 1px solid red;
+            border-style: solid;
+            border-top-color: gray;
+        }
+
+        .right {
+            border-right-color: gray;
+        }
+
+        .left {
+            border-left-color: gray;
+        }
+
+        .bot {
+            border-bottom-color: gray;
+        }
+
+        .shake {
+            animation: shake 0.1s;
+        }
+
+        @keyframes shake {
+
+            10%,
+            90% {
+                transform: translate3d(-10px, 0, 0);
+            }
+
+            20%,
+            80% {
+                transform: translate3d(10px, 0, 0);
+            }
+
+            30%,
+            50%,
+            70% {
+                transform: translate3d(-10px, 0, 0);
+            }
+
+            40%,
+            60% {
+                transform: translate3d(10px, 0, 0);
+            }
+        }
+
+        .box:hover {
+            animation-play-state: paused;
+        }
+    </style>
+
+</head>
+
+<body>
+    <canvas id="game-area" class="no-shake" width="500" height="500"></canvas>
+    <audio id="myAudio" src="music.mp3" autoplay loop volume="0.1"></audio>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.4/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.6.4/firebase-database.js";
+        let gameStats = {};
+        const firebaseConfig = {
+            apiKey: "AIzaSyBMhSz5yXVPvh58_fJGnVwTQnOiN72NMwg",
+            authDomain: "tripong-9d785.firebaseapp.com",
+            projectId: "tripong-9d785",
+            storageBucket: "tripong-9d785.appspot.com",
+            messagingSenderId: "441096078193",
+            appId: "1:441096078193:web:1ac7f0e58405b2409e6cd0",
+            measurementId: "G-ENHKJLYG8D",
+            databaseURL: "https://tripong-9d785-default-rtdb.firebaseio.com",
+        };
+
+        let startingStats = {
+            "player1": {
+                "x": 10,
+                "y": 250,
+                "lives": 1
+            },
+            "player2": {
+                "x": 480,
+                "y": 230,
+                "lives": 1
+            },
+            "player3": {
+                "x": 230,
+                "y": 480,
+                "lives": 1
+            },
+            "ball": {
+                "x": 250,
+                "y": 20
+            },
+            "paused": true,
+            "win": false
+        }
+
+
+        window.onload = function (event) {
+            set(ref(database, "game"), startingStats);
+        }
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const gameRef = ref(database, "game");
+
+        onValue(gameRef, (snapshot) => {
+            const data = snapshot.val();
+
+            gameStats = data;
+        });
+
+
+        let pausePhrase = '(╯°□°）╯︵ ┻━┻';
+        let phrase = pausePhrase;
+        let d = 100;
+
+        // Obtenha a referência para a canvas
+        var canvas = document.getElementById("game-area");
+        var ctx = canvas.getContext("2d");
+        var startingLife = 1;
+
+        // Variáveis para armazenar a posição e tamanho das raquetes
+        var player1X = gameStats.player1?.x ?? 10;
+        var player1Y = gameStats.player1?.y ?? 250;
+        var player1Width = 10;
+        var player1Height = 50;
+        var player1Move = false;
+
+        var player2X = gameStats.player2?.x ?? 480;
+        var player2Y = gameStats.player2?.y ?? 250;
+        var player2Width = 10;
+        var player2Height = 50;
+        var player2Move = false;
+
+        var player3X = gameStats.player3?.x ?? 480;
+        var player3Y = gameStats.player3?.y ?? 250;
+        var player3Width = 50;
+        var player3Height = 10;
+        var player3Move = false;
+
+        // Variáveis para armazenar a posição e tamanho da bola
+        var ballRadius = 10;
+
+        // Variáveis para armazenar a velocidade da bola
+        var startingBallSpeed = 1;
+        var ballSpeedX = startingBallSpeed;
+        var ballSpeedY = startingBallSpeed;
+        let velocityBall = 1.001;
+
+
+        // Variáveis para guardar as posições iniciais do canvas
+        var canvasInitialX = canvas.offsetLeft;
+        var canvasInitialY = canvas.offsetTop;
+
+
+        // Desenha as raquetes e a bola
+        function draw() {
+            // Limpa a tela
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "white";
+            // Desenha a bola
+            if (!gameStats?.win && !gameStats?.paused) {
+                ctx.beginPath();
+                ctx.arc(gameStats.ball?.x, gameStats.ball?.y, ballRadius, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+
+            ctx.font = "20px Arial";
+            // Desenha as raquetes
+            ctx.fillStyle = "#0891BA";
+            if (gameStats.player1?.lives > 0) {
+                ctx.fillText("♥ " + gameStats.player1?.lives, 120, 30);
+                ctx.fillRect(gameStats.player1?.x, gameStats.player1?.y, player1Width, player1Height);
+            } else {
+                ctx.fillText("┌(ಥ_ಥ )┘", 100, 30);
+                document.getElementById("game-area").classList.add("left");
+            }
+
+            ctx.fillStyle = "#ED225D";
+            if (gameStats.player2?.lives > 0) {
+                ctx.fillText("♥ " + gameStats.player2?.lives, 220, 30);
+                ctx.fillRect(gameStats.player2?.x, gameStats.player2?.y, player2Width, player2Height);
+            } else {
+                document.getElementById("game-area").classList.add("right");
+                ctx.fillText("ヽ(ಠ_ಠ)ノ", 210, 30);
+            }
+
+            ctx.fillStyle = "#F0E33A";
+            if (gameStats.player3?.lives > 0) {
+                ctx.fillRect(gameStats.player3?.x, gameStats.player3?.y, player3Width, player3Height);
+                ctx.fillText("♥ " + gameStats.player3?.lives, 320, 30);
+            } else {
+                document.getElementById("game-area").classList.add("bot");
+                ctx.fillText("┌( ಠ_ಠ)┘", 330, 30);
+            }
+
+            ctx.fillStyle = "lightgray";
+        }
+
+
+        // Atualiza a posição da bola e verifica se houve colisão
+        function update() {
+            if (!gameStats?.paused && !gameStats?.win) {
+                // Atualiza a posição da bola
+                // ballX += ballSpeedX;
+                // ballY += ballSpeedY;
+                // ballSpeedX *= velocityBall;
+                // ballSpeedY *= velocityBall;
+                let ballX = gameStats.ball?.x + ballSpeedX
+                console.log(ballX)
+                let ballY = gameStats.ball?.y + ballSpeedY
+                set(ref(database, "game/ball/y"), ballY);
+                // set(ref(database, "game/ball/x"), ballX);
+
+                // Verifica limites dos players
+                if (player1Y < 30) {
+                    player1Y = 30;
+                } else if (player1Y + player1Height > canvas.height - 30) {
+                    player1Y = canvas.height - player1Height - 30;
+                }
+
+                if (player2Y < 30) {
+                    player2Y = 30;
+                } else if (player2Y + player2Height > canvas.height - 30) {
+                    player2Y = canvas.height - player2Height - 30;
+                }
+
+                if (player3X < 30) {
+                    player3X = 30;
+                } else if (player3X + player3Width > canvas.width - 30) {
+                    player3X = canvas.width - player3Width - 30;
+                }
+
+                // Detecção de colisão
+                if (gameStats.ball?.x - ballRadius < player1X + player1Width &&
+                    ballY > player1Y &&
+                    ballY < player1Y + player1Height) {
+                    // Inverte a velocidade horizontal da bola e adiciona um pequeno efeito de "curva"
+                    ballSpeedX = -ballSpeedX - 0.5;
+                    let ballX = gameStats.ball?.x + 15
+                    set(ref(database, "game/ball/x"), ballX)
+
+                } else if (gameStats.ball?.x + ballRadius > player2X &&
+                    ballY > player2Y &&
+                    ballY < player2Y + player2Height) {
+                    ballSpeedX = -ballSpeedX;
+                    let ballX = gameStats.ball?.x - 15
+                    set(ref(database, "game/ball/x"), ballX)
+                }
+
+                if (gameStats.ball?.x > player3X &&
+                    gameStats.ball?.x < player3X + player3Width &&
+                    ballY + ballRadius > player3Y) {
+                    ballSpeedY = -ballSpeedY - 0.5;
+                    ballY -= 15;
+                }
+
+                // Limites do Teto
+                if (ballY - ballRadius < 0) {
+                    ballY += 15;
+                    ballSpeedY = -ballSpeedY;
+                    shakeCanvas();
+                }
+
+                // Verifica se a bola saiu da tela
+                if (gameStats.ball?.x - ballRadius > canvas.width) {
+                    if (gameStats.player2?.lives > 0) {
+                        let lives = gameStats.player2?.lives - 1
+                        set(ref(database, "game/player2/lives"), lives);
+                        reset();
+                    } else {
+
+                        let ballX = gameStats.ball?.x - 2
+                        set(ref(database, "game/ball/x"), ballX)
+                        ballSpeedX = -ballSpeedX;
+                        shakeCanvas();
+                    }
+
+                } else if (gameStats.ball?.x + ballRadius < 0) {
+                    if (gameStats.player1?.lives > 0) {
+                        let lives = gameStats.player1?.lives - 1
+                        set(ref(database, "game/player1/lives"), lives);
+                        reset();
+                    } else {
+                        let ballX = gameStats.ball?.x + 2
+                        set(ref(database, "game/ball/x"), ballX)
+                        ballSpeedX = -ballSpeedX;
+                        shakeCanvas();
+                    }
+                } else if (ballY + ballRadius > canvas.height) {
+                    if (gameStats.player3?.lives > 0) {
+                        let lives = gameStats.player3?.lives - 1
+                        set(ref(database, "game/player3/lives"), lives);
+                        reset();
+                    } else {
+                        let ballX = gameStats.ball?.x - 2
+                        set(ref(database, "game/ball/x"), ballX)
+                        ballSpeedY = -ballSpeedY;
+                        shakeCanvas();
+                    }
+                }
+
+
+
+                var playersSpeed = 10;
+                //NEW PLAYERS MOVEMENT
+                if (player1Move === 'up') {
+                    player1Y -= playersSpeed;
+                    set(ref(database, "game/player1/y"), player1Y);
+
+                } else if (player1Move === 'down') {
+                    player1Y += playersSpeed;
+                    set(ref(database, "game/player1/y"), player1Y);
+
+
+                }
+
+                if (player2Move === 'up') {
+                    player2Y -= playersSpeed;
+                    set(ref(database, "game/player2/y"), player2Y);
+
+                } else if (player2Move === 'down') {
+                    player2Y += playersSpeed;
+                    set(ref(database, "game/player2/y"), player2Y);
+
+                }
+
+
+
+                if (player3Move === 'left') {
+                    player3X -= playersSpeed;
+                    set(ref(database, "game/player3/x"), player3X);
+
+                } else if (player3Move === 'right') {
+                    player3X += playersSpeed;
+                    set(ref(database, "game/player3/x"), player3X);
+
+                }
+
+
+                if (ballSpeedX === 0 || ballSpeedY === 0) {
+                    reset();
+                }
+
+            } else {
+                let audio = document.getElementById('myAudio');
+                audio.pause();
+                let text = '';
+                if (gameStats?.win == 'c') {
+                    ctx.fillStyle = "#0891BA";
+                    text = `~(^-^)~`
+                    d = 50;
+                } else if (gameStats?.win == 'm') {
+                    ctx.fillStyle = "#ED225D";
+                    text = '◝(^ᗜ^)◜'
+                    d = 50;
+                } else if (gameStats?.win == 'y') {
+                    ctx.fillStyle = "#F0E33A";
+                    text = '╰(´꒳`)╯'
+                    d = 50;
+                } else {
+                    ctx.fillStyle = "lightgray";
+                    text = phrase
+
+                }
+                // Desenha a pontuação
+                ctx.font = "20px Arial";
+                ctx.fillText(text, canvas.width / 2 - d, canvas.height / 2);
+            }
+            // Variáveis para armazenar a velocidade dos jogadores
+
+            checkWin();
+        }
+
+        function checkWin() {
+            if ((gameStats.player1.lives > 0 && gameStats.player2.lives <= 0 && gameStats.player3.lives <= 0)) {
+                set(ref(database, "game/win"), 'c');
+            } else if ((gameStats.player2.lives > 0 && gameStats.player1.lives <= 0 && gameStats.player3.lives <= 0)) {
+                set(ref(database, "game/win"), 'm');
+            } else if ((gameStats.player3.lives > 0 && gameStats.player1.lives <= 0 && gameStats.player2.lives <= 0)) {
+                set(ref(database, "game/win"), 'y');
+            }
+        }
+
+        // Redefine a posição da bola no centro da tela e inverte a velocidade da bola
+        function reset() {
+            let ballX = Math.floor(Math.random() * ((canvas.width - 50) - 50 + 1)) + 50;
+            set(ref(database, "game/ball/x"), ballX)
+
+            ballY = 20;
+            if (ballSpeedX > 0) ballSpeedX = -5;
+            else ballSpeedX = 5;
+            ballSpeedY = startingBallSpeed;
+
+        }
+
+        // Função para fazer o canvas "tremer"
+        function shakeCanvas() {
+            // Adiciona a classe de shake ao canvas
+            document.getElementById("game-area").classList.add("shake");
+            setTimeout(() => {
+                // Remove a classe de shake após o efeito terminar
+                document.getElementById("game-area").classList.remove("shake");
+            }, 100);
+        }
+
+        function resetGame() {
+            reset();
+            set(ref(database, "game/win"), false);
+            set(ref(database, "game/paused"), false);
+            player1Lives = startingLife
+            player2Lives = startingLife
+            player3Lives = startingLife
+            document.getElementById("game-area").classList.remove("left");
+            document.getElementById("game-area").classList.remove("right");
+            document.getElementById("game-area").classList.remove("bot");
+            let audio = document.getElementById("myAudio");
+            audio.play();
+            audio.volume = 0.1;
+        }
+
+
+
+        // Controla a raquete do jogador 1 usando as setas do teclado
+        document.onkeydown = function (event) {
+            if (event.key == 'r' || event.key == 'R') {
+                resetGame();
+            }
+            if (!gameStats?.paused) {
+                if (event.key === "w" || event.key === "W") {
+                    player1Move = 'up';
+                } else if (event.key === "s" || event.key === "S") {
+                    player1Move = 'down';
+
+                }
+
+                if (event.keyCode == 38) {
+                    player2Move = 'up';
+                } else if (event.keyCode == 40) {
+                    player2Move = 'down';
+                }
+
+                if (event.key === "a" || event.key === "A" || event.keyCode == 37) {
+                    player3Move = 'left';
+                } else if (event.key === "d" || event.key === "D" || event.keyCode == 39) {
+                    player3Move = 'right';
+                }
+            }
+            if (event.keyCode == 32) { // verifica se a tecla pressionada é o espaço
+                phrase = pausePhrase;
+                // paused = !paused; // inverte o valor de paused
+                set(ref(database, "game/paused"), !gameStats?.paused);
+                d = 100;
+            }
+        }
+
+        document.onkeyup = function (event) {
+            if (event.key === "w" || event.key === "W" || event.key === "s" || event.key === "S") {
+                player1Move = false;
+            }
+
+            if (event.keyCode == 38 || event.keyCode == 40) {
+                player2Move = false;
+            }
+
+            if (event.key === "a" || event.key === "A" || event.keyCode == 37 || event.key === "d" || event.key === "D" || event.keyCode == 39) {
+                player3Move = false;
+            }
+        }
+
+        document.onclick = function (event) {
+            let audio = document.getElementById('myAudio');
+            audio.volume = 0.1;
+            audio.loop = true;
+            audio.play();
+        }
+
+
+        // Atualiza a tela 30 vezes por segundo
+        setInterval(function () {
+            draw();
+            update();
+        }, 1000 / 60);
+    </script>
+</body>
+
+</html>

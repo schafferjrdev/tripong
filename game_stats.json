@@ -1,0 +1,25 @@
+{
+    "game": {
+        "player1": {
+            "x": 10,
+            "y": 480,
+            "lives": 1
+        },
+        "player2": {
+            "x": 230,
+            "y": 480,
+            "lives": 1
+        },
+        "player3": {
+            "x": 480,
+            "y": 230,
+            "lives": 1
+        },
+        "ball": {
+            "x": 250,
+            "y": 250
+        },
+        "paused": true,
+        "win": false
+    }
+}
