@@ -156,6 +156,8 @@
 
         // Variáveis para armazenar a posição e tamanho da bola
         var ballRadius = 10;
+        let ballX = 250;
+        let ballY = 20;
 
         // Variáveis para armazenar a velocidade da bola
         var startingBallSpeed = 1;
@@ -178,7 +180,7 @@
             // Desenha a bola
             if (!gameStats?.win && !gameStats?.paused) {
                 ctx.beginPath();
-                ctx.arc(gameStats.ball?.x, gameStats.ball?.y, ballRadius, 0, 2 * Math.PI);
+                ctx.arc(ballX, ballY, ballRadius, 0, 2 * Math.PI);
                 ctx.fill();
             }
 
@@ -219,15 +221,11 @@
         function update() {
             if (!gameStats?.paused && !gameStats?.win) {
                 // Atualiza a posição da bola
-                // ballX += ballSpeedX;
-                // ballY += ballSpeedY;
-                // ballSpeedX *= velocityBall;
-                // ballSpeedY *= velocityBall;
-                let ballX = gameStats.ball?.x + ballSpeedX
-                console.log(ballX)
-                let ballY = gameStats.ball?.y + ballSpeedY
-                set(ref(database, "game/ball/y"), ballY);
-                // set(ref(database, "game/ball/x"), ballX);
+                ballX += ballSpeedX;
+                ballY += ballSpeedY;
+                ballSpeedX *= velocityBall;
+                ballSpeedY *= velocityBall;
+
 
                 // Verifica limites dos players
                 if (player1Y < 30) {
@@ -249,24 +247,22 @@
                 }
 
                 // Detecção de colisão
-                if (gameStats.ball?.x - ballRadius < player1X + player1Width &&
+                if (ballX - ballRadius < player1X + player1Width &&
                     ballY > player1Y &&
                     ballY < player1Y + player1Height) {
                     // Inverte a velocidade horizontal da bola e adiciona um pequeno efeito de "curva"
                     ballSpeedX = -ballSpeedX - 0.5;
-                    let ballX = gameStats.ball?.x + 15
-                    set(ref(database, "game/ball/x"), ballX)
+                    ballX = ballX + 15
 
-                } else if (gameStats.ball?.x + ballRadius > player2X &&
+                } else if (ballX + ballRadius > player2X &&
                     ballY > player2Y &&
                     ballY < player2Y + player2Height) {
                     ballSpeedX = -ballSpeedX;
-                    let ballX = gameStats.ball?.x - 15
-                    set(ref(database, "game/ball/x"), ballX)
+                    ballX = ballX - 15
                 }
 
-                if (gameStats.ball?.x > player3X &&
-                    gameStats.ball?.x < player3X + player3Width &&
+                if (ballX > player3X &&
+                    ballX < player3X + player3Width &&
                     ballY + ballRadius > player3Y) {
                     ballSpeedY = -ballSpeedY - 0.5;
                     ballY -= 15;
@@ -280,26 +276,26 @@
                 }
 
                 // Verifica se a bola saiu da tela
-                if (gameStats.ball?.x - ballRadius > canvas.width) {
+                if (ballX - ballRadius > canvas.width) {
                     if (gameStats.player2?.lives > 0) {
                         let lives = gameStats.player2?.lives - 1
                         set(ref(database, "game/player2/lives"), lives);
                         reset();
                     } else {
 
-                        let ballX = gameStats.ball?.x - 2
+                        let ballX = ballX - 2
                         set(ref(database, "game/ball/x"), ballX)
                         ballSpeedX = -ballSpeedX;
                         shakeCanvas();
                     }
 
-                } else if (gameStats.ball?.x + ballRadius < 0) {
+                } else if (ballX + ballRadius < 0) {
                     if (gameStats.player1?.lives > 0) {
                         let lives = gameStats.player1?.lives - 1
                         set(ref(database, "game/player1/lives"), lives);
                         reset();
                     } else {
-                        let ballX = gameStats.ball?.x + 2
+                        let ballX = ballX + 2
                         set(ref(database, "game/ball/x"), ballX)
                         ballSpeedX = -ballSpeedX;
                         shakeCanvas();
@@ -310,7 +306,7 @@
                         set(ref(database, "game/player3/lives"), lives);
                         reset();
                     } else {
-                        let ballX = gameStats.ball?.x - 2
+                        let ballX = ballX - 2
                         set(ref(database, "game/ball/x"), ballX)
                         ballSpeedY = -ballSpeedY;
                         shakeCanvas();
