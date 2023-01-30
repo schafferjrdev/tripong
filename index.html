@@ -68,103 +68,54 @@
 </head>
 
 <body>
-    <canvas id="game-area" class="no-shake" width="500" height="500"></canvas>
+    <canvas id="game-area" class="no-shake" width="800" height="800"></canvas>
     <audio id="myAudio" src="music.mp3" autoplay loop volume="0.1"></audio>
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.4/firebase-app.js";
-        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/9.6.4/firebase-database.js";
-        let gameStats = {};
-        const firebaseConfig = {
-            apiKey: "AIzaSyBMhSz5yXVPvh58_fJGnVwTQnOiN72NMwg",
-            authDomain: "tripong-9d785.firebaseapp.com",
-            projectId: "tripong-9d785",
-            storageBucket: "tripong-9d785.appspot.com",
-            messagingSenderId: "441096078193",
-            appId: "1:441096078193:web:1ac7f0e58405b2409e6cd0",
-            measurementId: "G-ENHKJLYG8D",
-            databaseURL: "https://tripong-9d785-default-rtdb.firebaseio.com",
-        };
-
-        let startingStats = {
-            "player1": {
-                "x": 10,
-                "y": 250,
-                "lives": 1
-            },
-            "player2": {
-                "x": 480,
-                "y": 230,
-                "lives": 1
-            },
-            "player3": {
-                "x": 230,
-                "y": 480,
-                "lives": 1
-            },
-            "ball": {
-                "x": 250,
-                "y": 20
-            },
-            "paused": true,
-            "win": false
-        }
-
-
-        window.onload = function (event) {
-            set(ref(database, "game"), startingStats);
-        }
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-        const gameRef = ref(database, "game");
-
-        onValue(gameRef, (snapshot) => {
-            const data = snapshot.val();
-
-            gameStats = data;
-        });
-
 
         let pausePhrase = '(╯°□°）╯︵ ┻━┻';
         let phrase = pausePhrase;
         let d = 100;
 
+        var paused = true;
+        var win = false;
+
         // Obtenha a referência para a canvas
         var canvas = document.getElementById("game-area");
         var ctx = canvas.getContext("2d");
-        var startingLife = 1;
+        var startingLife = 3;
 
+        var player1Lives = startingLife;
+        var player2Lives = startingLife;
+        var player3Lives = startingLife;
         // Variáveis para armazenar a posição e tamanho das raquetes
-        var player1X = gameStats.player1?.x ?? 10;
-        var player1Y = gameStats.player1?.y ?? 250;
+        var player1X = 10;
+        var player1Y = canvas.height / 2 - 25;
         var player1Width = 10;
         var player1Height = 50;
         var player1Move = false;
 
-        var player2X = gameStats.player2?.x ?? 480;
-        var player2Y = gameStats.player2?.y ?? 250;
+        var player2X = canvas.width - 20;
+        var player2Y = canvas.height / 2 - 25;
         var player2Width = 10;
         var player2Height = 50;
         var player2Move = false;
 
-        var player3X = gameStats.player3?.x ?? 480;
-        var player3Y = gameStats.player3?.y ?? 250;
+        var player3X = canvas.width / 2 - 25;
+        var player3Y = canvas.height - 20;
         var player3Width = 50;
         var player3Height = 10;
         var player3Move = false;
 
         // Variáveis para armazenar a posição e tamanho da bola
+        var ballX = canvas.width / 2;
+        var ballY = canvas.height / 2;
         var ballRadius = 10;
-        let ballX = 250;
-        let ballY = 20;
 
         // Variáveis para armazenar a velocidade da bola
-        var startingBallSpeed = 1;
+        var startingBallSpeed = 5;
         var ballSpeedX = startingBallSpeed;
         var ballSpeedY = startingBallSpeed;
-        let velocityBall = 1.001;
-
+        var velocityBall = 1.001;
 
         // Variáveis para guardar as posições iniciais do canvas
         var canvasInitialX = canvas.offsetLeft;
@@ -178,7 +129,7 @@
 
             ctx.fillStyle = "white";
             // Desenha a bola
-            if (!gameStats?.win && !gameStats?.paused) {
+            if (!win && !paused) {
                 ctx.beginPath();
                 ctx.arc(ballX, ballY, ballRadius, 0, 2 * Math.PI);
                 ctx.fill();
@@ -187,30 +138,30 @@
             ctx.font = "20px Arial";
             // Desenha as raquetes
             ctx.fillStyle = "#0891BA";
-            if (gameStats.player1?.lives > 0) {
-                ctx.fillText("♥ " + gameStats.player1?.lives, 120, 30);
-                ctx.fillRect(gameStats.player1?.x, gameStats.player1?.y, player1Width, player1Height);
+            if (player1Lives > 0) {
+                ctx.fillText("♥ " + player1Lives, canvas.width / 4, 30);
+                ctx.fillRect(player1X, player1Y, player1Width, player1Height);
             } else {
-                ctx.fillText("┌(ಥ_ಥ )┘", 100, 30);
+                ctx.fillText("┌(ಥ_ಥ )┘", canvas.width / 4, 30);
                 document.getElementById("game-area").classList.add("left");
             }
 
             ctx.fillStyle = "#ED225D";
-            if (gameStats.player2?.lives > 0) {
-                ctx.fillText("♥ " + gameStats.player2?.lives, 220, 30);
-                ctx.fillRect(gameStats.player2?.x, gameStats.player2?.y, player2Width, player2Height);
+            if (player2Lives > 0) {
+                ctx.fillText("♥ " + player2Lives, canvas.width * 2 / 4, 30);
+                ctx.fillRect(player2X, player2Y, player2Width, player2Height);
             } else {
                 document.getElementById("game-area").classList.add("right");
-                ctx.fillText("ヽ(ಠ_ಠ)ノ", 210, 30);
+                ctx.fillText("ヽ(ಠ_ಠ)ノ", canvas.width * 2 / 4, 30);
             }
 
             ctx.fillStyle = "#F0E33A";
-            if (gameStats.player3?.lives > 0) {
-                ctx.fillRect(gameStats.player3?.x, gameStats.player3?.y, player3Width, player3Height);
-                ctx.fillText("♥ " + gameStats.player3?.lives, 320, 30);
+            if (player3Lives > 0) {
+                ctx.fillText("♥ " + player3Lives, canvas.width * 3 / 4, 30);
+                ctx.fillRect(player3X, player3Y, player3Width, player3Height);
             } else {
                 document.getElementById("game-area").classList.add("bot");
-                ctx.fillText("┌( ಠ_ಠ)┘", 330, 30);
+                ctx.fillText("┌( ಠ_ಠ)┘", canvas.width * 3 / 4, 30);
             }
 
             ctx.fillStyle = "lightgray";
@@ -219,7 +170,7 @@
 
         // Atualiza a posição da bola e verifica se houve colisão
         function update() {
-            if (!gameStats?.paused && !gameStats?.win) {
+            if (!paused && !win) {
                 // Atualiza a posição da bola
                 ballX += ballSpeedX;
                 ballY += ballSpeedY;
@@ -257,7 +208,7 @@
                 } else if (ballX + ballRadius > player2X &&
                     ballY > player2Y &&
                     ballY < player2Y + player2Height) {
-                    ballSpeedX = -ballSpeedX;
+                    ballSpeedX = -ballSpeedX + 0.5;
                     ballX = ballX - 15
                 }
 
@@ -277,37 +228,30 @@
 
                 // Verifica se a bola saiu da tela
                 if (ballX - ballRadius > canvas.width) {
-                    if (gameStats.player2?.lives > 0) {
-                        let lives = gameStats.player2?.lives - 1
-                        set(ref(database, "game/player2/lives"), lives);
+                    if (player2Lives > 0) {
+                        player2Lives--;
                         reset();
                     } else {
-
-                        let ballX = ballX - 2
-                        set(ref(database, "game/ball/x"), ballX)
+                        ballX -= 2;
                         ballSpeedX = -ballSpeedX;
                         shakeCanvas();
                     }
 
                 } else if (ballX + ballRadius < 0) {
-                    if (gameStats.player1?.lives > 0) {
-                        let lives = gameStats.player1?.lives - 1
-                        set(ref(database, "game/player1/lives"), lives);
+                    if (player1Lives > 0) {
+                        player1Lives--;
                         reset();
                     } else {
-                        let ballX = ballX + 2
-                        set(ref(database, "game/ball/x"), ballX)
+                        ballX += 2;
                         ballSpeedX = -ballSpeedX;
                         shakeCanvas();
                     }
                 } else if (ballY + ballRadius > canvas.height) {
-                    if (gameStats.player3?.lives > 0) {
-                        let lives = gameStats.player3?.lives - 1
-                        set(ref(database, "game/player3/lives"), lives);
+                    if (player3Lives > 0) {
+                        player3Lives--;
                         reset();
                     } else {
-                        let ballX = ballX - 2
-                        set(ref(database, "game/ball/x"), ballX)
+                        ballX -= 2;
                         ballSpeedY = -ballSpeedY;
                         shakeCanvas();
                     }
@@ -319,35 +263,22 @@
                 //NEW PLAYERS MOVEMENT
                 if (player1Move === 'up') {
                     player1Y -= playersSpeed;
-                    set(ref(database, "game/player1/y"), player1Y);
-
                 } else if (player1Move === 'down') {
                     player1Y += playersSpeed;
-                    set(ref(database, "game/player1/y"), player1Y);
-
-
                 }
 
                 if (player2Move === 'up') {
                     player2Y -= playersSpeed;
-                    set(ref(database, "game/player2/y"), player2Y);
-
                 } else if (player2Move === 'down') {
                     player2Y += playersSpeed;
-                    set(ref(database, "game/player2/y"), player2Y);
-
                 }
 
 
 
                 if (player3Move === 'left') {
                     player3X -= playersSpeed;
-                    set(ref(database, "game/player3/x"), player3X);
-
                 } else if (player3Move === 'right') {
                     player3X += playersSpeed;
-                    set(ref(database, "game/player3/x"), player3X);
-
                 }
 
 
@@ -359,15 +290,15 @@
                 let audio = document.getElementById('myAudio');
                 audio.pause();
                 let text = '';
-                if (gameStats?.win == 'c') {
+                if (win == 'c') {
                     ctx.fillStyle = "#0891BA";
                     text = `~(^-^)~`
                     d = 50;
-                } else if (gameStats?.win == 'm') {
+                } else if (win == 'm') {
                     ctx.fillStyle = "#ED225D";
                     text = '◝(^ᗜ^)◜'
                     d = 50;
-                } else if (gameStats?.win == 'y') {
+                } else if (win == 'y') {
                     ctx.fillStyle = "#F0E33A";
                     text = '╰(´꒳`)╯'
                     d = 50;
@@ -386,20 +317,18 @@
         }
 
         function checkWin() {
-            if ((gameStats.player1.lives > 0 && gameStats.player2.lives <= 0 && gameStats.player3.lives <= 0)) {
-                set(ref(database, "game/win"), 'c');
-            } else if ((gameStats.player2.lives > 0 && gameStats.player1.lives <= 0 && gameStats.player3.lives <= 0)) {
-                set(ref(database, "game/win"), 'm');
-            } else if ((gameStats.player3.lives > 0 && gameStats.player1.lives <= 0 && gameStats.player2.lives <= 0)) {
-                set(ref(database, "game/win"), 'y');
+            if ((player1Lives > 0 && player2Lives <= 0 && player3Lives <= 0)) {
+                win = 'c'
+            } else if ((player2Lives > 0 && player1Lives <= 0 && player3Lives <= 0)) {
+                win = 'm'
+            } else if ((player3Lives > 0 && player1Lives <= 0 && player2Lives <= 0)) {
+                win = 'y'
             }
         }
 
         // Redefine a posição da bola no centro da tela e inverte a velocidade da bola
         function reset() {
-            let ballX = Math.floor(Math.random() * ((canvas.width - 50) - 50 + 1)) + 50;
-            set(ref(database, "game/ball/x"), ballX)
-
+            ballX = Math.floor(Math.random() * ((canvas.width - 50) - 50 + 1)) + 50;
             ballY = 20;
             if (ballSpeedX > 0) ballSpeedX = -5;
             else ballSpeedX = 5;
@@ -419,8 +348,8 @@
 
         function resetGame() {
             reset();
-            set(ref(database, "game/win"), false);
-            set(ref(database, "game/paused"), false);
+            win = false;
+            paused = false;
             player1Lives = startingLife
             player2Lives = startingLife
             player3Lives = startingLife
@@ -439,7 +368,7 @@
             if (event.key == 'r' || event.key == 'R') {
                 resetGame();
             }
-            if (!gameStats?.paused) {
+            if (!paused) {
                 if (event.key === "w" || event.key === "W") {
                     player1Move = 'up';
                 } else if (event.key === "s" || event.key === "S") {
@@ -461,8 +390,7 @@
             }
             if (event.keyCode == 32) { // verifica se a tecla pressionada é o espaço
                 phrase = pausePhrase;
-                // paused = !paused; // inverte o valor de paused
-                set(ref(database, "game/paused"), !gameStats?.paused);
+                paused = !paused; // inverte o valor de paused
                 d = 100;
             }
         }
