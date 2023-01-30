@@ -103,7 +103,9 @@
             },
             "ball": {
                 "x": 250,
-                "y": 20
+                "y": 20,
+                "speedX": 1,
+                "speedY": 1
             },
             "paused": true,
             "win": false
@@ -180,7 +182,7 @@
             // Desenha a bola
             if (!gameStats?.win && !gameStats?.paused) {
                 ctx.beginPath();
-                ctx.arc(ballX, ballY, ballRadius, 0, 2 * Math.PI);
+                ctx.arc(gameStats.ball?.x, gameStats.ball?.y, ballRadius, 0, 2 * Math.PI);
                 ctx.fill();
             }
 
@@ -223,8 +225,10 @@
                 // Atualiza a posição da bola
                 ballX += ballSpeedX;
                 ballY += ballSpeedY;
-                ballSpeedX *= velocityBall;
-                ballSpeedY *= velocityBall;
+                // ballSpeedX *= velocityBall;
+                // ballSpeedY *= velocityBall;
+                set(ref(database, "game/ball/x"), ballX)
+                set(ref(database, "game/ball/y"), ballY)
 
 
                 // Verifica limites dos players
@@ -253,12 +257,16 @@
                     // Inverte a velocidade horizontal da bola e adiciona um pequeno efeito de "curva"
                     ballSpeedX = -ballSpeedX - 0.5;
                     ballX = ballX + 15
+                    set(ref(database, "game/ball/x"), ballX)
+                    set(ref(database, "game/ball/speedX"), ballSpeedX)
 
                 } else if (ballX + ballRadius > player2X &&
                     ballY > player2Y &&
                     ballY < player2Y + player2Height) {
                     ballSpeedX = -ballSpeedX;
                     ballX = ballX - 15
+                    set(ref(database, "game/ball/x"), ballX)
+                    set(ref(database, "game/ball/speedX"), ballSpeedX)
                 }
 
                 if (ballX > player3X &&
@@ -266,12 +274,16 @@
                     ballY + ballRadius > player3Y) {
                     ballSpeedY = -ballSpeedY - 0.5;
                     ballY -= 15;
+                    set(ref(database, "game/ball/y"), ballY)
+                    set(ref(database, "game/ball/speedY"), ballSpeedY)
                 }
 
                 // Limites do Teto
                 if (ballY - ballRadius < 0) {
                     ballY += 15;
                     ballSpeedY = -ballSpeedY;
+                    set(ref(database, "game/ball/y"), ballY)
+                    set(ref(database, "game/ball/speedY"), ballSpeedY)
                     shakeCanvas();
                 }
 
@@ -286,6 +298,7 @@
                         let ballX = ballX - 2
                         set(ref(database, "game/ball/x"), ballX)
                         ballSpeedX = -ballSpeedX;
+                        set(ref(database, "game/ball/speedX"), ballSpeedX)
                         shakeCanvas();
                     }
 
@@ -298,6 +311,7 @@
                         let ballX = ballX + 2
                         set(ref(database, "game/ball/x"), ballX)
                         ballSpeedX = -ballSpeedX;
+                        set(ref(database, "game/ball/speedX"), ballSpeedX)
                         shakeCanvas();
                     }
                 } else if (ballY + ballRadius > canvas.height) {
@@ -306,9 +320,10 @@
                         set(ref(database, "game/player3/lives"), lives);
                         reset();
                     } else {
-                        let ballX = ballX - 2
-                        set(ref(database, "game/ball/x"), ballX)
+                        let ballY = ballY - 2
+                        set(ref(database, "game/ball/y"), ballY)
                         ballSpeedY = -ballSpeedY;
+                        set(ref(database, "game/ball/speedY"), ballSpeedY)
                         shakeCanvas();
                     }
                 }
@@ -404,6 +419,7 @@
             if (ballSpeedX > 0) ballSpeedX = -5;
             else ballSpeedX = 5;
             ballSpeedY = startingBallSpeed;
+            set(ref(database, "game/ball/speedY"), ballSpeedY)
 
         }
 
